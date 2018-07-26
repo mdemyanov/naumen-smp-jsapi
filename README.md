@@ -1,22 +1,21 @@
 # naumen_smp_jsapi
 
-A library for Dart developers.
+Библиотека для разработки встраиваемых приложений Naumen SMP на Dart.
 
-Created from templates made available by Stagehand under a BSD-style
-[license](https://github.com/dart-lang/stagehand/blob/master/LICENSE).
 
-## Usage
+## Использование
 
-A simple usage example:
+Простой пример использования:
 
     import 'package:naumen_smp_jsapi/naumen_smp_jsapi.dart';
 
-    main() {
-      var awesome = new Awesome();
-    }
+         main() {
+           print('Приложение встроено на карточку с UUID: ${SmpAPI.currentUUID}');
+           print('Код контента приложения: ${SmpAPI.contentCode}');
+         }
 
-## Features and bugs
+## Замечания и предложения
 
-Please file feature requests and bugs at the [issue tracker][tracker].
+Вы можете оставлять свои замечания и предложения в [трекер][tracker] этого репозитория.
 
-[tracker]: http://example.com/issues/replaceme
+[tracker]: https://github.com/mdemyanov/naumen-smp-jsapi/issues
