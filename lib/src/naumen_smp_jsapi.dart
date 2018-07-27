@@ -110,8 +110,6 @@ class SmpAPI {
   /// Метод REST API сервиса Naumen SMP для получения объекта по URL
   static _extractData(Response resp) => json.decode(resp.body);
 
-  /// Блок методов для работы с родительским окном, например, получить код контента и тп
-
   /// Проверяет, встроено ли приложение как IFRAME
   static bool get isEmbedded => context['frameElement'] != null;
 
@@ -171,20 +169,25 @@ class SmpAPI {
   /// Получить ссылку на карточку объекта по UUID
   static String objectCard(String uuid) =>
       execContextFunction('objectCard', [uuid]);
+
   /// Получить ссылку на форму редактирования объекта по UUID
   static String objectEditForm(String uuid) =>
       execContextFunction('objectEditForm', [uuid]);
+
   /// Получить ссылку на форму добавления объекта по FQN
   static String objectAddForm(String fqn) =>
       execContextFunction('objectAddForm', [fqn]);
+
   /// Установить значение HASH головного окна
   static void setCurrentHash(String hash) {
     context['top']['location']['hash'] = hash;
   }
+
   /// Зарегистрировать изменение (заполнение атрибута) во время добавления объекта
   static void registerAttributeToModification(
           String attrCode, Function callback) =>
       execContextFunction('registerAttributeToModification', [callback]);
+
   /// Зарегистрировать функцию на отслеживание изменений по атрибуту
   static void addFieldChangeListener(String attrCode, Function callback) =>
       execContextFunction('registerAttributeToModification', [callback]);
