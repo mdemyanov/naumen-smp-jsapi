@@ -158,13 +158,13 @@ class SmpAPI {
   static String extractSubjectUuid() => currentUUID;
 
   /// Приложение встроено на форму добавления
-  static String get isAddForm => getContextParam('isAddForm');
+  static bool get isAddForm => execContextFunction('isAddForm') as bool;
 
   /// Приложение встроено на форму редактирования
-  static String get isEditForm => getContextParam('isEditForm');
+  static bool get isEditForm => execContextFunction('isEditForm') as bool;
 
   /// Приложение встроено на карточку
-  static String get isOnObjectCard => getContextParam('isOnObjectCard');
+  static bool get isOnObjectCard => execContextFunction('isOnObjectCard') as bool;
 
   /// Получить ссылку на карточку объекта по UUID
   static String objectCard(String uuid) =>
