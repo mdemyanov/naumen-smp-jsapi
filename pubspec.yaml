@@ -1,6 +1,6 @@
 name: naumen_smp_jsapi
 description: Простая библиотека для работы с API Naumen SMP для Dartlang.
-version: '1.0.4'
+version: '1.0.5'
 homepage: 'https://github.com/mdemyanov/naumen-smp-jsapi'
 author: 'mdemyanov <mdemyanov@naumen.ru>'
 
