@@ -1,3 +1,4 @@
+import 'dart:html';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:js';
@@ -6,6 +7,9 @@ import 'package:http/browser_client.dart';
 import 'package:http/http.dart';
 
 class SmpAPI {
+  /// Таймаут на поиск родительского окна
+  static final int _timeOut = 1000;
+
   /// Заголовки для REST API запросов в сторону сервера Naumen SMP
   static final _headers = {'Content-Type': 'application/json'};
 
@@ -99,7 +103,7 @@ class SmpAPI {
     String body = json.encode(data);
     try {
       final response =
-          await _http.post('$_edit$url', headers: _headers, body: body);
+      await _http.post('$_edit$url', headers: _headers, body: body);
       return response.body;
     } catch (e) {
       print(e.toString());
@@ -117,13 +121,30 @@ class SmpAPI {
   static get top => isEmbedded ? context['top'] : null;
 
   /// Возвращает контекст текущего окна
-  static get window => context['window'];
+  static get cWindow => JsObject.fromBrowserObject(context['window']);
+
+  /// Возвращает контекст родительского окна от iframeResizer
+  static JsObject get parentIFrame {
+    var parentIFrame = cWindow['parentIFrame'];
+    int timeOut = 0;
+    while (parentIFrame == null && timeOut < _timeOut) {
+      Future.delayed(Duration(milliseconds: timeOut), () {
+        timeOut += 50;
+        parentIFrame = cWindow['parentIFrame'];
+      });
+    }
+    if (timeOut > _timeOut) {
+      throw ('iframe has no `parentIFrame` property. ' +
+          'Did you include iframeResizer.contentWindow.js before any other scripts?');
+    }
+    return JsObject.fromBrowserObject(parentIFrame);
+  }
 
   /// Возвращает контекст JS API, при необходимости инициализирует его
   static JsObject get jsApi {
     JsObject _jsApi = context['jsApi'];
     if (_jsApi == null && top != null) {
-      top.callMethod('injectJsApi', [top, window]);
+      top.callMethod('injectJsApi', [top, cWindow]);
       _jsApi = context['jsApi'];
     }
     return _jsApi;
@@ -164,7 +185,8 @@ class SmpAPI {
   static bool get isEditForm => execContextFunction('isEditForm') as bool;
 
   /// Приложение встроено на карточку
-  static bool get isOnObjectCard => execContextFunction('isOnObjectCard') as bool;
+  static bool get isOnObjectCard =>
+      execContextFunction('isOnObjectCard') as bool;
 
   /// Получить ссылку на карточку объекта по UUID
   static String objectCard(String uuid) =>
@@ -184,11 +206,79 @@ class SmpAPI {
   }
 
   /// Зарегистрировать изменение (заполнение атрибута) во время добавления объекта
-  static void registerAttributeToModification(
-          String attrCode, Function callback) =>
-      execContextFunction('registerAttributeToModification', [callback]);
+  static void registerAttributeToModification(String attrCode,
+      Function callback) =>
+      execContextFunction(
+          'registerAttributeToModification', [attrCode, callback]);
 
   /// Зарегистрировать функцию на отслеживание изменений по атрибуту
   static void addFieldChangeListener(String attrCode, Function callback) =>
-      execContextFunction('registerAttributeToModification', [callback]);
+      execContextFunction('addFieldChangeListener', [attrCode, callback]);
+
+  /// Команды
+  ///
+  /// Перечень методов, для вызова команд текущего контекста
+
+  /// Отправить сообщение через iframeResizer
+  static void sendMessage(var message) {
+    if (message is Map) {
+      message = jsonEncode(message);
+    }
+    parentIFrame.callMethod('sendMessage', [message]);
+  }
+
+  /// Ожидать исполнения команды
+  static Future<Map> waitForCommandResponse(String commandName,
+      [Map commandArguments = const {}]) async {
+    Map resolve;
+    Map command = {commandName: commandArguments};
+    sendMessage(jsonEncode(command));
+    await window.onMessage.firstWhere((MessageEvent event) {
+      if (event.data == commandName + '.cancelled') {
+        return true;
+      }
+      try {
+        resolve = jsonDecode(event.data);
+      } catch (e) {
+        print('Ошибка обработки postMessage: ${e.toString()}');
+      }
+      if (resolve is Map && resolve['command'] == commandName) {
+        return true;
+      }
+    });
+    return resolve;
+  }
+
+  /// Команда для получения объекта из текущего GWT контекста
+  ///
+  /// Для страниц добавления/редактирования - это текущий добавляемый и
+  /// редактируемый объект, для карточки объекта - текущий объект
+  static Future<Map> getCurrentContextObject() async {
+    return await waitForCommandResponse('getCurrentContextObject');
+  }
+  /// Команда для смены статуса объекта.
+  ///
+  /// Если статусов больше 1, либо при входе в статус есть обязательные
+  /// для заполнения атрибуты, появляется форма смены статуса.
+  static void changeState(String uuid, List<String> states) =>
+      sendMessage({
+        'changeState': {'uuid': uuid, 'statuses': states}
+      });
+  /// Команда для перехода на форму редактирования объекта
+  static void editObject(String uuid) =>
+      sendMessage({
+        'editObject': {'uuid': uuid}
+      });
+  /// Команда для открытия сложной формы добавления связи и выбора объекта
+  static Future<String> selectObjectDialog(String classFqn,
+      String presentAttributesGroupCode) {
+    return waitForCommandResponse('selectObjectDialog', {
+      'classFqn': classFqn,
+      'presentAttributesGroupCode': presentAttributesGroupCode
+    }).then((Map response) {
+      if(response == null || !response.containsKey('uuid')) {
+        throw('"uuid" property is absent. Got: ${response.toString()}');
+      } return response['uuid'];
+    });
+  }
 }
