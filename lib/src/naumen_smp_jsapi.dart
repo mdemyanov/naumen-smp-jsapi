@@ -1,10 +1,127 @@
+@JS()
+library jsApi;
+
 import 'dart:html';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:js';
 
+import "package:js/js.dart";
 import 'package:http/browser_client.dart';
 import 'package:http/http.dart';
+
+@JS('top')
+abstract class Top {
+  @JS('top.injectJsApi')
+  external static void injectJsApi(dynamic top, dynamic window);
+}
+
+@JS("Promise")
+class Promise {
+  external void then(Function onFulfilled, Function onRejected);
+
+  external static Promise resolve(dynamic value);
+}
+
+@JS('jsApi')
+abstract class JsApi {
+  @JS('jsApi.findContentCode')
+  external static String findContentCode();
+
+  @JS('jsApi.extractSubjectUuid')
+  external static String extractSubjectUuid();
+
+  @JS('jsApi.registerAttributeToModification')
+  external static void registerAttributeToModification(
+      String attrCode, Function resultCallBack);
+
+  @JS('jsApi.isAddForm')
+  external static bool isAddForm();
+
+  @JS('jsApi.isEditForm')
+  external static bool isEditForm();
+
+  @JS('jsApi.isOnObjectCard')
+  external static bool isOnObjectCard();
+
+  @JS('jsApi.getCurrentUser')
+  external static dynamic getCurrentUser();
+
+  @JS('jsApi.getAppBaseUrl')
+  external static String getAppBaseUrl();
+
+  @JS('jsApi.getAppRestBaseUrl')
+  external static String getAppRestBaseUrl();
+
+  @JS('jsApi.restCall')
+  external static Promise restCall(String restOfTheUrl, Map options);
+
+  @JS('jsApi.restCallAsJson')
+  external static Promise restCallAsJson(String restOfTheUrl, Map options);
+
+  @JS('jsApi.addFieldChangeListener')
+  external static void addFieldChangeListener(
+      String attrCode, void Function(Attribute) callback);
+
+  external static Commands get commands;
+}
+
+@JS('jsApi.commands')
+abstract class Commands {
+  @JS('jsApi.commands.getCurrentContextObject')
+  external static Promise getCurrentContextObject();
+
+  @JS('jsApi.commands.selectObjectDialog')
+  external static Promise selectObjectDialog(
+      String classFqn, String presentAttributesGroupCode);
+
+  @JS('jsApi.commands.changeState')
+  external static void changeState(String uuid, List<String> states);
+
+  @JS('jsApi.commands.editObject')
+  external static Promise editObject(String uuid);
+}
+
+@JS('jsApi.requests')
+abstract class Requests {
+  @JS('jsApi.requests.make')
+  external static Promise make(Map options);
+
+  @JS('jsApi.requests.json')
+  external static Promise json(Map options);
+}
+
+@JS('jsApi.urls')
+abstract class Urls {
+  @JS('jsApi.urls.base')
+  external static String base();
+
+  @JS('jsApi.urls.objectCard')
+  external static String objectCard(String uuid);
+
+  @JS('jsApi.urls.objectEditForm')
+  external static String objectEditForm(String uuid);
+
+  @JS('jsApi.urls.objectAddForm')
+  external static String objectAddForm(String fqn);
+}
+
+@JS('jsApi.configuration')
+abstract class Configuration {
+  @JS('jsApi.configuration.byContentCode')
+  external static Promise byContentCode(String moduleCode, List args);
+
+  @JS('jsApi.configuration.byDefault')
+  external static Promise byDefault(String moduleCode, List args);
+}
+
+@JS()
+@anonymous
+abstract class Attribute {
+  String get attribute;
+
+  dynamic get newValue;
+}
 
 class SmpAPI {
   /// Таймаут на поиск родительского окна
@@ -103,7 +220,7 @@ class SmpAPI {
     String body = json.encode(data);
     try {
       final response =
-      await _http.post('$_edit$url', headers: _headers, body: body);
+          await _http.post('$_edit$url', headers: _headers, body: body);
       return response.body;
     } catch (e) {
       print(e.toString());
@@ -206,8 +323,8 @@ class SmpAPI {
   }
 
   /// Зарегистрировать изменение (заполнение атрибута) во время добавления объекта
-  static void registerAttributeToModification(String attrCode,
-      Function callback) =>
+  static void registerAttributeToModification(
+          String attrCode, Function callback) =>
       execContextFunction(
           'registerAttributeToModification', [attrCode, callback]);
 
@@ -256,29 +373,31 @@ class SmpAPI {
   static Future<Map> getCurrentContextObject() async {
     return await waitForCommandResponse('getCurrentContextObject');
   }
+
   /// Команда для смены статуса объекта.
   ///
   /// Если статусов больше 1, либо при входе в статус есть обязательные
   /// для заполнения атрибуты, появляется форма смены статуса.
-  static void changeState(String uuid, List<String> states) =>
-      sendMessage({
+  static void changeState(String uuid, List<String> states) => sendMessage({
         'changeState': {'uuid': uuid, 'statuses': states}
       });
+
   /// Команда для перехода на форму редактирования объекта
-  static void editObject(String uuid) =>
-      sendMessage({
+  static void editObject(String uuid) => sendMessage({
         'editObject': {'uuid': uuid}
       });
+
   /// Команда для открытия сложной формы добавления связи и выбора объекта
-  static Future<String> selectObjectDialog(String classFqn,
-      String presentAttributesGroupCode) {
+  static Future<String> selectObjectDialog(
+      String classFqn, String presentAttributesGroupCode) {
     return waitForCommandResponse('selectObjectDialog', {
       'classFqn': classFqn,
       'presentAttributesGroupCode': presentAttributesGroupCode
     }).then((Map response) {
-      if(response == null || !response.containsKey('uuid')) {
-        throw('"uuid" property is absent. Got: ${response.toString()}');
-      } return response['uuid'];
+      if (response == null || !response.containsKey('uuid')) {
+        throw ('"uuid" property is absent. Got: ${response.toString()}');
+      }
+      return response['uuid'];
     });
   }
 }
