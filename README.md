@@ -8,11 +8,12 @@
 Простой пример использования:
 
     import 'package:naumen_smp_jsapi/naumen_smp_jsapi.dart';
+    
+    main() {
+      print('Приложение встроено на карточку с UUID: ${JsApi.extractSubjectUuid()}');
+      print('Код контента приложения: ${JsApi.findContentCode()}');
+    }
 
-         main() {
-           print('Приложение встроено на карточку с UUID: ${SmpAPI.currentUUID}');
-           print('Код контента приложения: ${SmpAPI.contentCode}');
-         }
 
 ## Замечания и предложения
 

@@ -12,9 +12,12 @@ import 'package:http/http.dart';
 
 @JS('top')
 abstract class Top {
-  @JS('top.injectJsApi')
+  @JS('injectJsApi')
   external static void injectJsApi(dynamic top, dynamic window);
 }
+
+@JS('window')
+abstract class Window {}
 
 @JS("Promise")
 class Promise {
@@ -25,102 +28,160 @@ class Promise {
 
 @JS('jsApi')
 abstract class JsApi {
-  @JS('jsApi.findContentCode')
+  @JS('findContentCode')
   external static String findContentCode();
 
-  @JS('jsApi.extractSubjectUuid')
+  @JS('extractSubjectUuid')
   external static String extractSubjectUuid();
 
-  @JS('jsApi.registerAttributeToModification')
+  @JS('registerAttributeToModification')
   external static void registerAttributeToModification(
       String attrCode, Function resultCallBack);
 
-  @JS('jsApi.isAddForm')
+  @JS('isAddForm')
   external static bool isAddForm();
 
-  @JS('jsApi.isEditForm')
+  @JS('isEditForm')
   external static bool isEditForm();
 
-  @JS('jsApi.isOnObjectCard')
+  @JS('isOnObjectCard')
   external static bool isOnObjectCard();
 
-  @JS('jsApi.getCurrentUser')
+  @JS('getCurrentUser')
   external static dynamic getCurrentUser();
 
-  @JS('jsApi.getAppBaseUrl')
+  @JS('getAppBaseUrl')
   external static String getAppBaseUrl();
 
-  @JS('jsApi.getAppRestBaseUrl')
+  @JS('getAppRestBaseUrl')
   external static String getAppRestBaseUrl();
 
-  @JS('jsApi.restCall')
+  @JS('restCall')
   external static Promise restCall(String restOfTheUrl, Map options);
 
-  @JS('jsApi.restCallAsJson')
+  @JS('restCallAsJson')
   external static Promise restCallAsJson(String restOfTheUrl, Map options);
 
-  @JS('jsApi.addFieldChangeListener')
+  @JS('addFieldChangeListener')
   external static void addFieldChangeListener(
       String attrCode, void Function(Attribute) callback);
 
+  @JS('commands')
   external static Commands get commands;
+
+  @JS('requests')
+  external static Requests get requests;
+
+  @JS('urls')
+  external static Urls get urls;
+
+  @JS('configuration')
+  external static Configuration get configuration;
 }
 
-@JS('jsApi.commands')
+@JS()
+@anonymous
 abstract class Commands {
-  @JS('jsApi.commands.getCurrentContextObject')
-  external static Promise getCurrentContextObject();
+  @JS('getCurrentContextObject')
+  external Promise getCurrentContextObject();
 
-  @JS('jsApi.commands.selectObjectDialog')
-  external static Promise selectObjectDialog(
+  @JS('selectObjectDialog')
+  external Promise selectObjectDialog(
       String classFqn, String presentAttributesGroupCode);
 
-  @JS('jsApi.commands.changeState')
-  external static void changeState(String uuid, List<String> states);
+  @JS('changeState')
+  external void changeState(String uuid, List<String> states);
 
-  @JS('jsApi.commands.editObject')
-  external static Promise editObject(String uuid);
+  @JS('editObject')
+  external Promise editObject(String uuid);
 }
 
-@JS('jsApi.requests')
+@JS()
+@anonymous
 abstract class Requests {
-  @JS('jsApi.requests.make')
+  @JS('make')
   external static Promise make(Map options);
 
-  @JS('jsApi.requests.json')
+  @JS('json')
   external static Promise json(Map options);
 }
 
-@JS('jsApi.urls')
+@JS()
+@anonymous
 abstract class Urls {
-  @JS('jsApi.urls.base')
+  @JS('base')
   external static String base();
 
-  @JS('jsApi.urls.objectCard')
+  @JS('objectCard')
   external static String objectCard(String uuid);
 
-  @JS('jsApi.urls.objectEditForm')
+  @JS('objectEditForm')
   external static String objectEditForm(String uuid);
 
-  @JS('jsApi.urls.objectAddForm')
+  @JS('objectAddForm')
   external static String objectAddForm(String fqn);
 }
 
-@JS('jsApi.configuration')
+@JS()
+@anonymous
 abstract class Configuration {
-  @JS('jsApi.configuration.byContentCode')
+  @JS('byContentCode')
   external static Promise byContentCode(String moduleCode, List args);
 
-  @JS('jsApi.configuration.byDefault')
+  @JS('byDefault')
   external static Promise byDefault(String moduleCode, List args);
 }
 
 @JS()
 @anonymous
-abstract class Attribute {
-  String get attribute;
+abstract class SmpResponse {}
 
-  dynamic get newValue;
+@JS()
+@anonymous
+abstract class Attribute {
+  external String get attribute;
+
+  external dynamic get newValue;
+}
+
+@JS()
+@anonymous
+class StringAttribute extends Attribute {
+  external String get attribute;
+
+  external String get newValue;
+}
+
+@JS()
+@anonymous
+class StringList extends Attribute {
+  external String get attribute;
+
+  external List<String> get newValue;
+}
+
+@JS()
+@anonymous
+class BOLink extends Attribute {
+  external String get attribute;
+
+  external BObject get newValue;
+}
+
+@JS()
+@anonymous
+class BOLinks extends Attribute {
+  external String get attribute;
+
+  external List<BObject> get newValue;
+}
+
+@JS()
+@anonymous
+class BObject {
+  external String get title;
+
+  external String get UUID;
 }
 
 class SmpAPI {
@@ -231,14 +292,22 @@ class SmpAPI {
   /// Метод REST API сервиса Naumen SMP для получения объекта по URL
   static _extractData(Response resp) => json.decode(resp.body);
 
+  @deprecated
+
   /// Проверяет, встроено ли приложение как IFRAME
   static bool get isEmbedded => context['frameElement'] != null;
+
+  @deprecated
 
   /// Если встроено как IFRAME, то возвращает TOP
   static get top => isEmbedded ? context['top'] : null;
 
+  @deprecated
+
   /// Возвращает контекст текущего окна
   static get cWindow => JsObject.fromBrowserObject(context['window']);
+
+  @deprecated
 
   /// Возвращает контекст родительского окна от iframeResizer
   static JsObject get parentIFrame {
@@ -257,6 +326,8 @@ class SmpAPI {
     return JsObject.fromBrowserObject(parentIFrame);
   }
 
+  @deprecated
+
   /// Возвращает контекст JS API, при необходимости инициализирует его
   static JsObject get jsApi {
     JsObject _jsApi = context['jsApi'];
@@ -266,6 +337,8 @@ class SmpAPI {
     }
     return _jsApi;
   }
+
+  @deprecated
 
   /// Исполняет метод из контекста JS API
   static dynamic execContextFunction(String function,
@@ -278,55 +351,83 @@ class SmpAPI {
     return jsApi.callMethod(function, params);
   }
 
+  @deprecated
+
   /// Получает параметр из контекста JS API
   static String getContextParam(String function, [List params = const []]) {
     return execContextFunction(function, params) as String;
   }
 
+  @deprecated
+
   /// Возвращает код контента, в которое встроено приложение
   static String get contentCode => getContextParam('findContentCode');
+
+  @deprecated
 
   /// Возвращает код контента, в которое встроено приложение (по аналогии с JS API)
   static String findContentCode() => contentCode;
 
+  @deprecated
+
   /// Возвращает UUID карточки, на которую встроено приложение
   static String get currentUUID => getContextParam('extractSubjectUuid');
+
+  @deprecated
 
   /// Возвращает код контента, в которое встроено приложение (по аналогии с JS API)
   static String extractSubjectUuid() => currentUUID;
 
+  @deprecated
+
   /// Приложение встроено на форму добавления
   static bool get isAddForm => execContextFunction('isAddForm') as bool;
 
+  @deprecated
+
   /// Приложение встроено на форму редактирования
   static bool get isEditForm => execContextFunction('isEditForm') as bool;
+
+  @deprecated
 
   /// Приложение встроено на карточку
   static bool get isOnObjectCard =>
       execContextFunction('isOnObjectCard') as bool;
 
+  @deprecated
+
   /// Получить ссылку на карточку объекта по UUID
   static String objectCard(String uuid) =>
       execContextFunction('objectCard', [uuid]);
+
+  @deprecated
 
   /// Получить ссылку на форму редактирования объекта по UUID
   static String objectEditForm(String uuid) =>
       execContextFunction('objectEditForm', [uuid]);
 
+  @deprecated
+
   /// Получить ссылку на форму добавления объекта по FQN
   static String objectAddForm(String fqn) =>
       execContextFunction('objectAddForm', [fqn]);
+
+  @deprecated
 
   /// Установить значение HASH головного окна
   static void setCurrentHash(String hash) {
     context['top']['location']['hash'] = hash;
   }
 
+  @deprecated
+
   /// Зарегистрировать изменение (заполнение атрибута) во время добавления объекта
   static void registerAttributeToModification(
           String attrCode, Function callback) =>
       execContextFunction(
           'registerAttributeToModification', [attrCode, callback]);
+
+  @deprecated
 
   /// Зарегистрировать функцию на отслеживание изменений по атрибуту
   static void addFieldChangeListener(String attrCode, Function callback) =>
@@ -335,6 +436,7 @@ class SmpAPI {
   /// Команды
   ///
   /// Перечень методов, для вызова команд текущего контекста
+  @deprecated
 
   /// Отправить сообщение через iframeResizer
   static void sendMessage(var message) {
@@ -343,6 +445,8 @@ class SmpAPI {
     }
     parentIFrame.callMethod('sendMessage', [message]);
   }
+
+  @deprecated
 
   /// Ожидать исполнения команды
   static Future<Map> waitForCommandResponse(String commandName,
@@ -366,6 +470,8 @@ class SmpAPI {
     return resolve;
   }
 
+  @deprecated
+
   /// Команда для получения объекта из текущего GWT контекста
   ///
   /// Для страниц добавления/редактирования - это текущий добавляемый и
@@ -373,6 +479,8 @@ class SmpAPI {
   static Future<Map> getCurrentContextObject() async {
     return await waitForCommandResponse('getCurrentContextObject');
   }
+
+  @deprecated
 
   /// Команда для смены статуса объекта.
   ///
@@ -382,12 +490,15 @@ class SmpAPI {
         'changeState': {'uuid': uuid, 'statuses': states}
       });
 
+  @deprecated
+
   /// Команда для перехода на форму редактирования объекта
   static void editObject(String uuid) => sendMessage({
         'editObject': {'uuid': uuid}
       });
 
   /// Команда для открытия сложной формы добавления связи и выбора объекта
+  @deprecated
   static Future<String> selectObjectDialog(
       String classFqn, String presentAttributesGroupCode) {
     return waitForCommandResponse('selectObjectDialog', {
